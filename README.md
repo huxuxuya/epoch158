@@ -44,6 +44,33 @@ The script `scripts/check_inference_slot_rewards.py`:
    - `artifacts/epoch_158/inference_slot_reward_columns.csv` (audit table)
    - `artifacts/epoch_158/epoch_158_upgrade_compensation_rewards.go.txt` (upgrade-ready payout list)
 
+## Calculation Algorithm (Short)
+
+For each participant in epoch 158:
+
+1. Read chain data:
+   - `full_weight` and `confirmation_weight` from parent epoch group
+   - `rewarded_coins` from epoch performance summary
+2. Compute effective reward weight (chain-like):
+   - `effective_weight = preserved_weight + confirmation_weight`
+   - here `preserved_weight` is current inference-slot weight (`TimeslotAllocation[1]`)
+3. Apply the same reward filters as chain logic:
+   - exclusion handling
+   - power capping
+   - missed-request statistical test
+4. Simulate chain reward:
+   - `simulated_reward = effective_weight_after_filters * fixed_epoch_reward / total_full_weight`
+5. Compute global reward-per-weight coefficient:
+   - `global_coeff = sum(simulated_reward) / sum(non_inference_slot_weight)`
+6. Split and estimate:
+   - `calculated_reward_non_inference = non_inference_slot_weight * global_coeff`
+   - `expected_lost_reward_ngnk = lost_inference_slot_weight * global_coeff`
+   - `expected_lost_reward_gnk = expected_lost_reward_ngnk / 1e9`
+
+Where:
+- `lost_inference_slot_weight = historical_inference_slot_weight_at_effective_height - current_inference_slot_weight`
+- historical weights are read with `x-cosmos-block-height = effective_block_height`
+
 ## Why This Matters
 
 This approach provides:
