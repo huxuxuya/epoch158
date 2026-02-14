@@ -1,0 +1,19 @@
+{
+  "epoch": 158,
+  "inference_slot_index_used": 1,
+  "historical_effective_block_height_used": 2443438,
+  "global_reward_per_weight_coefficient": "50644076.544586891870325891562189793769628620724611643128213724000389435849978872",
+  "fixed_epoch_reward_formula": "299788529138192",
+  "simulated_distributed_total": "252286759171835",
+  "real_distributed_total": "252286759171835",
+  "distribution_gap_real_minus_simulated": "0",
+  "participants_reward_mismatch_count": 0,
+  "participants_total": 280,
+  "participants_with_inference_slot_weight": 0,
+  "participants_with_inference_slot_weight_and_rewarded": 0,
+  "participants_with_inference_slot_weight_but_zero_reward": 0,
+  "participants_with_lost_inference_slot_weight": 137,
+  "total_lost_inference_slot_weight": 592300,
+  "real_reward_calculated_by_inference_slot_ml_nodes": "0",
+  "real_reward_calculated_by_non_inference_slot_ml_nodes": "252286759171841"
+}
