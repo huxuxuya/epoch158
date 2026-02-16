@@ -43,6 +43,7 @@ The script `scripts/check_inference_slot_rewards.py`:
 5. Generates:
    - `artifacts/epoch_158/inference_slot_reward_columns.csv` (audit table)
    - `artifacts/epoch_158/epoch_158_upgrade_compensation_rewards.go.txt` (upgrade-ready payout list)
+   - `artifacts/epoch_158/epoch_158_compensation_proposal.json` (ready-to-submit gov proposal)
 
 ## Calculation Algorithm (Short)
 
@@ -70,6 +71,9 @@ For each participant in epoch 158:
 Where:
 - `lost_inference_slot_weight = historical_inference_slot_weight_at_effective_height - current_inference_slot_weight`
 - historical weights are read with `x-cosmos-block-height = effective_block_height`
+
+For an attachment-ready, exact formula spec (inputs, formulas, rounding, and payout assembly),
+see `COIN_AMOUNT_LOGIC.md`.
 
 ## Why This Matters
 
@@ -102,7 +106,13 @@ Run from repository root:
 python3 scripts/check_inference_slot_rewards.py \
   --node http://node1.gonka.ai:8000 \
   --epoch 158 \
-  --out-dir artifacts
+  --out-dir artifacts \
+  --proposal-sender <gov-module-address> \
+  --proposal-vesting-epochs 180 \
+  --proposal-deposit 50000000ngonka \
+  --proposal-title "Epoch 158 compensation payout from gov module" \
+  --proposal-summary "Distribute compensation proportional to epoch 158 lost preserved weights." \
+  --proposal-metadata "https://github.com/.../discussion-or-doc"
 ```
 
 Optional flag:
@@ -115,6 +125,10 @@ Optional flag:
   - audit table with real chain reward, formula simulation, non-inference-slot calculation, inference/non-inference weights, and expected lost reward (`ngonka` + `GNK`)
 - `artifacts/epoch_158/epoch_158_upgrade_compensation_rewards.go.txt`
   - upgrade-ready `[]BountyReward` list for compensation distribution
+- `artifacts/epoch_158/epoch_158_compensation_proposal.json`
+  - governance proposal JSON with one `MsgTransferWithVesting` per recipient, plus `title`/`summary`/`metadata`
+  - submit with:
+    - `inferenced tx gov submit-proposal <proposal.json> --from <wallet> --chain-id <chain-id> --yes`
 
 ### Quick Validation
 

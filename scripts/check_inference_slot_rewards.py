@@ -223,7 +223,7 @@ def apply_power_capping(weights_by_addr: dict[str, int]) -> dict[str, int]:
     return {x['addr']: min(x['weight'], cap) for x in items}
 
 
-def render_upgrade_compensation_go(epoch: int, rows: list[dict[str, Any]]) -> str:
+def build_compensation_amounts_by_addr(rows: list[dict[str, Any]]) -> dict[str, int]:
     amounts_by_addr: dict[str, int] = {}
     for r in rows:
         address = str(r['participant_index'])
@@ -236,6 +236,11 @@ def render_upgrade_compensation_go(epoch: int, rows: list[dict[str, Any]]) -> st
     amounts_by_addr[PROPOSAL_AUTHOR_ADDRESS] = (
         amounts_by_addr.get(PROPOSAL_AUTHOR_ADDRESS, 0) + PROPOSAL_AUTHOR_FEE_NGONKA
     )
+    return amounts_by_addr
+
+
+def render_upgrade_compensation_go(epoch: int, rows: list[dict[str, Any]]) -> str:
+    amounts_by_addr = build_compensation_amounts_by_addr(rows)
 
     positive = [{'address': addr, 'amount_ngonka': amt} for addr, amt in amounts_by_addr.items() if amt > 0]
     positive.sort(key=lambda x: x['address'])
@@ -268,6 +273,82 @@ def render_upgrade_compensation_go(epoch: int, rows: list[dict[str, Any]]) -> st
     return '\n'.join(lines)
 
 
+def extract_address_from_account_obj(account_obj: Any) -> str:
+    if isinstance(account_obj, dict):
+        if isinstance(account_obj.get('address'), str) and account_obj.get('address'):
+            return str(account_obj.get('address'))
+        for key in ('base_account', 'baseAccount', 'value'):
+            if key in account_obj:
+                found = extract_address_from_account_obj(account_obj.get(key))
+                if found:
+                    return found
+    return ''
+
+
+def find_gov_module_address(base: str, timeout: float) -> str:
+    paths = [
+        '/chain-api/cosmos/auth/v1beta1/module_accounts',
+        '/cosmos/auth/v1beta1/module_accounts',
+    ]
+    for path in paths:
+        try:
+            payload = api_get(base, path, timeout)
+        except Exception:
+            continue
+        accounts = payload.get('accounts', []) or []
+        for acc in accounts:
+            name = ''
+            if isinstance(acc, dict):
+                name = str(acc.get('name', ''))
+                if not name and isinstance(acc.get('value'), dict):
+                    name = str((acc.get('value') or {}).get('name', ''))
+            if name != 'gov':
+                continue
+            addr = extract_address_from_account_obj(acc)
+            if addr:
+                return addr
+    return ''
+
+
+def render_proposal_json(
+    epoch: int,
+    rows: list[dict[str, Any]],
+    sender: str,
+    deposit: str,
+    title: str,
+    summary: str,
+    metadata: str,
+    denom: str,
+    vesting_epochs: int,
+) -> str:
+    amounts_by_addr = build_compensation_amounts_by_addr(rows)
+    positive = [{'address': addr, 'amount_ngonka': amt} for addr, amt in amounts_by_addr.items() if amt > 0]
+    positive.sort(key=lambda x: x['address'])
+
+    messages = []
+    for item in positive:
+        messages.append(
+            {
+                '@type': '/inference.streamvesting.MsgTransferWithVesting',
+                'sender': sender,
+                'recipient': item['address'],
+                'amount': [{'denom': denom, 'amount': str(item['amount_ngonka'])}],
+                'vesting_epochs': str(vesting_epochs),
+            }
+        )
+
+    proposal: dict[str, Any] = {
+        'messages': messages,
+        'deposit': deposit,
+        'title': title,
+        'summary': summary,
+    }
+    if metadata:
+        proposal['metadata'] = metadata
+
+    return json.dumps(proposal, ensure_ascii=False, indent=2) + '\n'
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description='Check inference-slot rewards and include lost-slot data from historical snapshot.'
@@ -281,6 +362,42 @@ def main() -> int:
         type=int,
         default=1,
         help='Index in timeslot_allocation treated as inference slot (default: 1)',
+    )
+    parser.add_argument(
+        '--proposal-sender',
+        default='',
+        help='Sender address for MsgTransferWithVesting. If empty, script tries to resolve gov module account from node.',
+    )
+    parser.add_argument(
+        '--proposal-deposit',
+        default='50000000ngonka',
+        help='Proposal deposit string, e.g. 50000000ngonka',
+    )
+    parser.add_argument(
+        '--proposal-title',
+        default='',
+        help='Proposal title (default: auto-generated from epoch)',
+    )
+    parser.add_argument(
+        '--proposal-summary',
+        default='',
+        help='Proposal summary (default: auto-generated from epoch)',
+    )
+    parser.add_argument(
+        '--proposal-metadata',
+        default='',
+        help='Optional proposal metadata link',
+    )
+    parser.add_argument(
+        '--proposal-denom',
+        default='ngonka',
+        help='Denom used in MsgTransferWithVesting amounts',
+    )
+    parser.add_argument(
+        '--proposal-vesting-epochs',
+        type=int,
+        default=180,
+        help='Vesting epochs for MsgTransferWithVesting (0 allowed by chain, default 180 there).',
     )
     args = parser.parse_args()
 
@@ -399,6 +516,7 @@ def main() -> int:
     os.makedirs(out_dir, exist_ok=True)
     split_csv_path = os.path.join(out_dir, 'inference_slot_reward_columns.csv')
     upgrade_go_path = os.path.join(out_dir, f'epoch_{epoch}_upgrade_compensation_rewards.go.txt')
+    proposal_json_path = os.path.join(out_dir, f'epoch_{epoch}_compensation_proposal.json')
 
     # Simulate chain Bitcoin reward distribution formula.
     initial_epoch_reward = int(str(bitcoin_params.get('initial_epoch_reward', '0')))
@@ -527,6 +645,44 @@ def main() -> int:
     with open(upgrade_go_path, 'w', encoding='utf-8') as f:
         f.write(render_upgrade_compensation_go(epoch, split_rows))
 
+    proposal_sender = str(args.proposal_sender).strip()
+    if not proposal_sender:
+        proposal_sender = find_gov_module_address(base, timeout)
+    if not proposal_sender:
+        raise ValueError(
+            'Could not resolve gov module address automatically. Provide it via --proposal-sender.'
+        )
+
+    proposal_title = (
+        str(args.proposal_title).strip()
+        or f'Epoch {epoch} compensation payout from community pool'
+    )
+    proposal_summary = (
+        str(args.proposal_summary).strip()
+        or f'Distribute epoch {epoch} compensation proportional to lost preserved weight.'
+    )
+    proposal_metadata = str(args.proposal_metadata).strip()
+    proposal_deposit = str(args.proposal_deposit).strip()
+    proposal_denom = str(args.proposal_denom).strip()
+    proposal_vesting_epochs = int(args.proposal_vesting_epochs)
+    if proposal_vesting_epochs < 0 or proposal_vesting_epochs > 3650:
+        raise ValueError('--proposal-vesting-epochs must be between 0 and 3650')
+
+    with open(proposal_json_path, 'w', encoding='utf-8') as f:
+        f.write(
+            render_proposal_json(
+                epoch=epoch,
+                rows=split_rows,
+                sender=proposal_sender,
+                deposit=proposal_deposit,
+                title=proposal_title,
+                summary=proposal_summary,
+                metadata=proposal_metadata,
+                denom=proposal_denom,
+                vesting_epochs=proposal_vesting_epochs,
+            )
+        )
+
     participants_with_inf_slot = sum(1 for r in rows if int(r['inference_slot_weight']) > 0)
     rewarded_with_inf_slot = sum(1 for r in rows if int(r['inference_slot_weight']) > 0 and int(r['rewarded_coins']) > 0)
     missed = sum(1 for r in rows if int(r['inference_slot_weight']) > 0 and int(r['rewarded_coins']) == 0)
@@ -558,6 +714,9 @@ def main() -> int:
             sum(Decimal(r['calculated_reward_non_inference_slot_nodes']) for r in split_rows)
         ),
         'upgrade_compensation_go_file': upgrade_go_path,
+        'proposal_json_file': proposal_json_path,
+        'proposal_sender': proposal_sender,
+        'proposal_vesting_epochs': str(proposal_vesting_epochs),
     }
 
     print(json.dumps(summary, ensure_ascii=False, indent=2))
