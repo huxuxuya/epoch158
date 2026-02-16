@@ -23,11 +23,10 @@ Finally, after all participant compensations are calculated, an additional fixed
 
 ## Scope
 
-The script computes three related amounts:
+The script computes two related payout outputs:
 
 1. Chain-formula simulated reward per participant (`simulated_reward_chain_formula`).
 2. Estimated lost reward due to lost inference-slot weight (`expected_lost_reward_ngnk`).
-3. Final upgrade payout amounts in Go output (`Amount` in `[]BountyReward`).
 
 ## Units
 
@@ -116,9 +115,9 @@ Also computed (for audit):
 - `calculated_reward_non_inference_slot_nodes = round_half_up(non_inf_weight_i * global_coeff)`
 - `calculated_reward_inference_slot_nodes = round_half_up(hist_inf_weight_i * global_coeff)`
 
-## Step 5: Final Upgrade Payout Amount
+## Step 5: Final Governance Payout Messages
 
-When generating `epoch_158_upgrade_compensation_rewards.go.txt`:
+When generating `epoch_158_compensation_proposal.json`:
 
 1. Start with `amount_i = expected_lost_reward_ngnk_i`.
 2. Exclude non-positive amounts (`<= 0`).
@@ -126,9 +125,12 @@ When generating `epoch_158_upgrade_compensation_rewards.go.txt`:
 4. Add fixed proposal-author fee:
    - address: `gonka1t7mcnc8zjkkvhwmfmst54sasulj68e5zsv4yzu`
    - amount: `500 * 1_000_000_000 = 500_000_000_000 ngonka`
-5. Sort by address and emit:
-   - `Amount` in integer `ngonka`
-   - GNK comment for readability only.
+5. Sort by address and emit one message per address:
+   - `@type = /inference.streamvesting.MsgTransferWithVesting`
+   - `sender` = gov account (proposal sender)
+   - `recipient` = participant address
+   - `amount` in integer `ngonka`
+   - `vesting_epochs` (default used by script: `180`)
 
 ## Output Fields That Represent Coin Amount
 
@@ -139,5 +141,5 @@ When generating `epoch_158_upgrade_compensation_rewards.go.txt`:
   - `expected_lost_reward_ngnk`
   - `expected_lost_reward_gnk`
 
-- Go payout file (`epoch_158_upgrade_compensation_rewards.go.txt`):
-  - `BountyReward.Amount` is the exact on-chain payout amount in `ngonka`.
+- Proposal file (`epoch_158_compensation_proposal.json`):
+  - `messages[].amount[].amount` is the exact on-chain payout amount in `ngonka`.

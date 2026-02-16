@@ -42,7 +42,6 @@ The script `scripts/check_inference_slot_rewards.py`:
 4. Calculates expected lost reward caused by lost inference-slot preserved weight.
 5. Generates:
    - `artifacts/epoch_158/inference_slot_reward_columns.csv` (audit table)
-   - `artifacts/epoch_158/epoch_158_upgrade_compensation_rewards.go.txt` (upgrade-ready payout list)
    - `artifacts/epoch_158/epoch_158_compensation_proposal.json` (ready-to-submit gov proposal)
 
 ## Calculation Algorithm (Short)
@@ -80,16 +79,15 @@ see `COIN_AMOUNT_LOGIC.md`.
 This approach provides:
 
 - reproducible evidence of who was underpaid and by how much;
-- a transparent address/amount list for on-chain compensation via a new upgrade;
-- output format aligned with existing upgrade payout pattern (`[]BountyReward`).
+- a transparent address/amount list for on-chain compensation via governance proposal.
 
 ## Amount Format
 
 - Base chain denom: `ngonka`
 - `1 GNK = 1_000_000_000 ngonka`
-- In `epoch_158_upgrade_compensation_rewards.go.txt`:
-  - `Amount` is in `ngonka` (exact on-chain unit)
-  - each line also includes a `GNK` comment for readability
+- In `epoch_158_compensation_proposal.json`:
+  - `amount[].amount` is in `ngonka` (exact on-chain unit)
+  - each message uses `MsgTransferWithVesting`
 
 ## How To Run
 
@@ -123,8 +121,6 @@ Optional flag:
 
 - `artifacts/epoch_158/inference_slot_reward_columns.csv`
   - audit table with real chain reward, formula simulation, non-inference-slot calculation, inference/non-inference weights, and expected lost reward (`ngonka` + `GNK`)
-- `artifacts/epoch_158/epoch_158_upgrade_compensation_rewards.go.txt`
-  - upgrade-ready `[]BountyReward` list for compensation distribution
 - `artifacts/epoch_158/epoch_158_compensation_proposal.json`
   - governance proposal JSON with one `MsgTransferWithVesting` per recipient, plus `title`/`summary`/`metadata`
   - submit with:
