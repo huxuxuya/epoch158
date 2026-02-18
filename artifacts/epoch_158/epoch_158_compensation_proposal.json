@@ -1659,5 +1659,5 @@
   "deposit": "50000000ngonka",
   "title": "Epoch 158 compensation payout from gov module",
   "summary": "Distribute compensation proportional to epoch 158 lost preserved weights.",
-  "metadata": "https://github.com/gonka-ai/gonka/discussions"
+  "metadata": "https://github.com/huxuxuya/epoch158/blob/main/SIMPLE_COIN_AMOUNT_LOGIC.md"
 }

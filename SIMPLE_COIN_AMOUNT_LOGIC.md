@@ -16,3 +16,6 @@ so final compensation is **236,153,328,927 ngonka** (**236.153328927 GNK**).
 If lost preserved weight is zero, compensation is zero.
 
 Finally, after all participant compensations are calculated, an additional fixed payment of **500 GNK** is added to the proposal author.
+
+Generated governance proposal JSON:
+https://github.com/huxuxuya/epoch158/blob/main/artifacts/epoch_158/epoch_158_compensation_proposal.json

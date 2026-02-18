@@ -12,6 +12,7 @@ getcontext().prec = 80
 
 PROPOSAL_AUTHOR_ADDRESS = 'gonka1t7mcnc8zjkkvhwmfmst54sasulj68e5zsv4yzu'
 PROPOSAL_AUTHOR_FEE_NGONKA = 500 * 1_000_000_000
+DEFAULT_PROPOSAL_METADATA_URL = 'https://github.com/huxuxuya/epoch158/blob/main/SIMPLE_COIN_AMOUNT_LOGIC.md'
 
 
 def dec_to_plain_str(x: Decimal) -> str:
@@ -361,7 +362,7 @@ def main() -> int:
     )
     parser.add_argument(
         '--proposal-metadata',
-        default='',
+        default=DEFAULT_PROPOSAL_METADATA_URL,
         help='Optional proposal metadata link',
     )
     parser.add_argument(
