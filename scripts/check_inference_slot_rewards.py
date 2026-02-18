@@ -292,15 +292,26 @@ def render_proposal_json(
 
     messages = []
     for item in positive:
-        messages.append(
-            {
-                '@type': '/inference.streamvesting.MsgTransferWithVesting',
-                'sender': sender,
-                'recipient': item['address'],
-                'amount': [{'denom': denom, 'amount': str(item['amount_ngonka'])}],
-                'vesting_epochs': str(vesting_epochs),
-            }
-        )
+        if item['address'] == PROPOSAL_AUTHOR_ADDRESS:
+            # Author reward is paid immediately from community pool (no vesting).
+            messages.append(
+                {
+                    '@type': '/cosmos.distribution.v1beta1.MsgCommunityPoolSpend',
+                    'authority': sender,
+                    'recipient': item['address'],
+                    'amount': [{'denom': denom, 'amount': str(item['amount_ngonka'])}],
+                }
+            )
+        else:
+            messages.append(
+                {
+                    '@type': '/inference.streamvesting.MsgTransferWithVesting',
+                    'sender': sender,
+                    'recipient': item['address'],
+                    'amount': [{'denom': denom, 'amount': str(item['amount_ngonka'])}],
+                    'vesting_epochs': str(vesting_epochs),
+                }
+            )
 
     proposal: dict[str, Any] = {
         'messages': messages,

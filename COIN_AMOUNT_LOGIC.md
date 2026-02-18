@@ -126,11 +126,18 @@ When generating `epoch_158_compensation_proposal.json`:
    - address: `gonka1t7mcnc8zjkkvhwmfmst54sasulj68e5zsv4yzu`
    - amount: `500 * 1_000_000_000 = 500_000_000_000 ngonka`
 5. Sort by address and emit one message per address:
-   - `@type = /inference.streamvesting.MsgTransferWithVesting`
-   - `sender` = gov account (proposal sender)
-   - `recipient` = participant address
-   - `amount` in integer `ngonka`
-   - `vesting_epochs` (default used by script: `180`)
+   - for regular compensation recipients:
+     - `@type = /inference.streamvesting.MsgTransferWithVesting`
+     - `sender` = gov account (proposal sender)
+     - `recipient` = participant address
+     - `amount` in integer `ngonka`
+     - `vesting_epochs` (default used by script: `180`)
+   - for fixed proposal-author reward (`500 GNK`):
+     - `@type = /cosmos.distribution.v1beta1.MsgCommunityPoolSpend`
+     - `authority` = gov account
+     - `recipient` = proposal author address
+     - `amount` in integer `ngonka`
+     - no vesting fields
 
 ## Output Fields That Represent Coin Amount
 

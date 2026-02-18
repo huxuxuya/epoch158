@@ -122,7 +122,10 @@ Optional flag:
 - `artifacts/epoch_158/inference_slot_reward_columns.csv`
   - audit table with real chain reward, formula simulation, non-inference-slot calculation, inference/non-inference weights, and expected lost reward (`ngonka` + `GNK`)
 - `artifacts/epoch_158/epoch_158_compensation_proposal.json`
-  - governance proposal JSON with one `MsgTransferWithVesting` per recipient, plus `title`/`summary`/`metadata`
+  - governance proposal JSON:
+    - compensation recipients: `MsgTransferWithVesting`
+    - fixed 500 GNK author reward: `MsgCommunityPoolSpend` (no vesting)
+    - plus `title`/`summary`/`metadata`
   - submit with:
     - `inferenced tx gov submit-proposal <proposal.json> --from <wallet> --chain-id <chain-id> --yes`
 
