@@ -44,6 +44,12 @@ The script `scripts/check_inference_slot_rewards.py`:
    - `artifacts/epoch_158/inference_slot_reward_columns.csv` (audit table)
    - `artifacts/epoch_158/epoch_158_compensation_proposal.json` (ready-to-submit gov proposal)
 
+## Batch-Vesting Requirement
+
+`MsgBatchTransferWithVesting` works only after the chain includes the related implementation:
+
+- `https://github.com/huxuxuya/gonka/tree/fix/BatchMessagesVesting`
+
 ## Calculation Algorithm (Short)
 
 For each participant in epoch 158:
@@ -87,7 +93,8 @@ This approach provides:
 - `1 GNK = 1_000_000_000 ngonka`
 - In `epoch_158_compensation_proposal.json`:
   - `amount[].amount` is in `ngonka` (exact on-chain unit)
-  - each message uses `MsgTransferWithVesting`
+  - payouts are emitted as one `MsgBatchTransferWithVesting` with `outputs[]`
+  - fixed 500 GNK author reward is emitted as `MsgCommunityPoolSpend` (no vesting)
 
 ## How To Run
 
@@ -110,7 +117,7 @@ python3 scripts/check_inference_slot_rewards.py \
   --proposal-deposit 50000000ngonka \
   --proposal-title "Epoch 158 compensation payout from gov module" \
   --proposal-summary "Distribute compensation proportional to epoch 158 lost preserved weights." \
-  --proposal-metadata "https://github.com/.../discussion-or-doc"
+  --proposal-metadata "https://github.com/huxuxuya/epoch158/blob/main/SIMPLE_COIN_AMOUNT_LOGIC.md"
 ```
 
 Optional flag:
@@ -123,7 +130,7 @@ Optional flag:
   - audit table with real chain reward, formula simulation, non-inference-slot calculation, inference/non-inference weights, and expected lost reward (`ngonka` + `GNK`)
 - `artifacts/epoch_158/epoch_158_compensation_proposal.json`
   - governance proposal JSON:
-    - compensation recipients: `MsgTransferWithVesting`
+    - compensation recipients: one `MsgBatchTransferWithVesting` with all recipients in `outputs[]`
     - fixed 500 GNK author reward: `MsgCommunityPoolSpend` (no vesting)
     - plus `title`/`summary`/`metadata`
   - submit with:

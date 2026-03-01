@@ -291,28 +291,36 @@ def render_proposal_json(
     positive = [{'address': addr, 'amount_ngonka': amt} for addr, amt in amounts_by_addr.items() if amt > 0]
     positive.sort(key=lambda x: x['address'])
 
-    messages = []
-    for item in positive:
-        if item['address'] == PROPOSAL_AUTHOR_ADDRESS:
-            # Author reward is paid immediately from community pool (no vesting).
-            messages.append(
-                {
-                    '@type': '/cosmos.distribution.v1beta1.MsgCommunityPoolSpend',
-                    'authority': sender,
-                    'recipient': item['address'],
-                    'amount': [{'denom': denom, 'amount': str(item['amount_ngonka'])}],
-                }
-            )
-        else:
-            messages.append(
-                {
-                    '@type': '/inference.streamvesting.MsgTransferWithVesting',
-                    'sender': sender,
-                    'recipient': item['address'],
-                    'amount': [{'denom': denom, 'amount': str(item['amount_ngonka'])}],
-                    'vesting_epochs': str(vesting_epochs),
-                }
-            )
+    author_amount = amounts_by_addr.get(PROPOSAL_AUTHOR_ADDRESS, 0)
+    vesting_outputs = [
+        {
+            'recipient': item['address'],
+            'amount': [{'denom': denom, 'amount': str(item['amount_ngonka'])}],
+        }
+        for item in positive
+        if item['address'] != PROPOSAL_AUTHOR_ADDRESS
+    ]
+
+    messages: list[dict[str, Any]] = []
+    if vesting_outputs:
+        messages.append(
+            {
+                '@type': '/inference.streamvesting.MsgBatchTransferWithVesting',
+                'sender': sender,
+                'vesting_epochs': str(vesting_epochs),
+                'outputs': vesting_outputs,
+            }
+        )
+    if author_amount > 0:
+        # Keep author reward immediate (no vesting), same as in the original proposal format.
+        messages.append(
+            {
+                '@type': '/cosmos.distribution.v1beta1.MsgCommunityPoolSpend',
+                'authority': sender,
+                'recipient': PROPOSAL_AUTHOR_ADDRESS,
+                'amount': [{'denom': denom, 'amount': str(author_amount)}],
+            }
+        )
 
     proposal: dict[str, Any] = {
         'messages': messages,
@@ -343,7 +351,7 @@ def main() -> int:
     parser.add_argument(
         '--proposal-sender',
         default='',
-        help='Sender address for MsgTransferWithVesting. If empty, script tries to resolve gov module account from node.',
+        help='Sender address for MsgBatchTransferWithVesting. If empty, script tries to resolve gov module account from node.',
     )
     parser.add_argument(
         '--proposal-deposit',
@@ -368,13 +376,13 @@ def main() -> int:
     parser.add_argument(
         '--proposal-denom',
         default='ngonka',
-        help='Denom used in MsgTransferWithVesting amounts',
+        help='Denom used in MsgBatchTransferWithVesting output amounts',
     )
     parser.add_argument(
         '--proposal-vesting-epochs',
         type=int,
         default=180,
-        help='Vesting epochs for MsgTransferWithVesting (0 allowed by chain, default 180 there).',
+        help='Vesting epochs for MsgBatchTransferWithVesting (0 allowed by chain, default 180 there).',
     )
     args = parser.parse_args()
 

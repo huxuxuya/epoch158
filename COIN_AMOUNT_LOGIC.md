@@ -2,6 +2,9 @@
 
 This document describes exactly how `scripts/check_inference_slot_rewards.py` computes coin amounts.
 
+Batch vesting payout format (`/inference.streamvesting.MsgBatchTransferWithVesting`) requires chain support from:
+`https://github.com/huxuxuya/gonka/tree/fix/BatchMessagesVesting`.
+
 ## Simple Reverse Explanation
 
 For epoch 158, we first take the total amount distributed by the reward simulation for that epoch: **252,286,759,171,835 ngonka**.
@@ -125,14 +128,13 @@ When generating `epoch_158_compensation_proposal.json`:
 4. Add fixed proposal-author fee:
    - address: `gonka1t7mcnc8zjkkvhwmfmst54sasulj68e5zsv4yzu`
    - amount: `500 * 1_000_000_000 = 500_000_000_000 ngonka`
-5. Sort by address and emit one message per address:
-   - for regular compensation recipients:
-     - `@type = /inference.streamvesting.MsgTransferWithVesting`
+5. Sort by address and emit two messages:
+   - one batch vesting message for all regular compensation recipients:
+     - `@type = /inference.streamvesting.MsgBatchTransferWithVesting`
      - `sender` = gov account (proposal sender)
-     - `recipient` = participant address
-     - `amount` in integer `ngonka`
      - `vesting_epochs` (default used by script: `180`)
-   - for fixed proposal-author reward (`500 GNK`):
+     - `outputs[]` contains `{recipient, amount}` entries with integer `ngonka`
+   - one immediate (no vesting) message for fixed proposal-author reward (`500 GNK`):
      - `@type = /cosmos.distribution.v1beta1.MsgCommunityPoolSpend`
      - `authority` = gov account
      - `recipient` = proposal author address
