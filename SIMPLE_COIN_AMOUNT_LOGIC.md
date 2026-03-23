@@ -17,7 +17,7 @@ If lost preserved weight is zero, compensation is zero.
 
 Finally, after all participant compensations are calculated, an additional fixed payment of **500 GNK** is added to the proposal author.
 
-Also, `MsgBatchTransferWithVesting` has a minimum payout of **10 GNK**. Because of that, recipient `gonka10etnufq85u67k075yuxq6h3rzwlcln5rffhlyx` was increased from **3,089,288,669 ngonka** to **10,000,000,000 ngonka** after the chain rejected the smaller amount.
+Also, `MsgBatchTransferWithVesting` has a minimum payout of **10 GNK**. Because of that, all payouts below this threshold in `epoch_158_compensation_proposal_batch_vesting.json` were raised to **10,000,000,000 ngonka** after the chain rejected smaller amounts.
 
 Generated governance proposal JSON:
 https://github.com/huxuxuya/epoch158/blob/main/artifacts/epoch_158/epoch_158_compensation_proposal.json

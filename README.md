@@ -53,8 +53,17 @@ The script `scripts/check_inference_slot_rewards.py`:
 ## Minimum Transfer Constraint
 
 `MsgBatchTransferWithVesting` has a minimum payout of `10 GNK` (`10,000,000,000 ngonka`).
-Because of that, recipient `gonka10etnufq85u67k075yuxq6h3rzwlcln5rffhlyx` was increased
-from `3,089,288,669 ngonka` to `10,000,000,000 ngonka` after the chain rejected the smaller amount.
+Because of that, these payouts in `epoch_158_compensation_proposal_batch_vesting.json`
+were raised to `10,000,000,000 ngonka` after the chain rejected smaller amounts:
+
+- `gonka10etnufq85u67k075yuxq6h3rzwlcln5rffhlyx`: `3,089,288,669 -> 10,000,000,000 ngonka`
+- `gonka16lksjaqq2gqpeexvqg4xgux6hdtms3wnk4jjle`: `4,304,746,506 -> 10,000,000,000 ngonka`
+- `gonka1948n747ayualpznexxchnx95pdnpu25mph804e`: `3,443,797,205 -> 10,000,000,000 ngonka`
+- `gonka19g7jp7tcpnh9ul6gkr3kdc3lmcy55w6swvql0f`: `1,468,678,220 -> 10,000,000,000 ngonka`
+- `gonka1kjrvy4xme4ctepdjspjdw677nmvdwlps4hl5h8`: `6,634,374,027 -> 10,000,000,000 ngonka`
+- `gonka1qre9aepalndahwj37xrcepndmut2vu9dr3kh4t`: `4,760,543,195 -> 10,000,000,000 ngonka`
+- `gonka1un2c9f66mg2g6xcpmulq9tqfs3vjd7nn0ftjs5`: `5,722,780,650 -> 10,000,000,000 ngonka`
+- `gonka1vkh8e2uqk9mdw0ql83g0p4ge0wmqstcasulngn`: `8,913,357,472 -> 10,000,000,000 ngonka`
 
 ## Calculation Algorithm (Short)
 
