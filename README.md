@@ -50,6 +50,12 @@ The script `scripts/check_inference_slot_rewards.py`:
 
 - `https://github.com/huxuxuya/gonka/tree/fix/BatchMessagesVesting`
 
+## Minimum Transfer Constraint
+
+`MsgBatchTransferWithVesting` has a minimum payout of `10 GNK` (`10,000,000,000 ngonka`).
+Because of that, recipient `gonka10etnufq85u67k075yuxq6h3rzwlcln5rffhlyx` was increased
+from `3,089,288,669 ngonka` to `10,000,000,000 ngonka` after the chain rejected the smaller amount.
+
 ## Calculation Algorithm (Short)
 
 For each participant in epoch 158:
